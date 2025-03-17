@@ -1,0 +1,32 @@
+interface PaymentMethod {
+    void processPayment(double amount);
+}
+
+class CreditCardPayment implements PaymentMethod {
+    public void processPayment(double amount) {
+        System.out.println("Processing credit card payment of $" + amount);
+    }
+}
+
+class PayPalPayment implements PaymentMethod {
+    public void processPayment(double amount) {
+        System.out.println("Processing PayPal payment of $" + amount);
+    }
+}
+
+class PaymentFactory {
+    public static PaymentMethod getPaymentMethod(String type) {
+        return switch (type) {
+            case "CreditCard" -> new CreditCardPayment();
+            case "PayPal" -> new PayPalPayment();
+            default -> throw new IllegalArgumentException("Invalid payment type");
+        }
+    }
+}
+
+public class PaymentMain {
+    public static void main(String[] args) {
+        PaymentMethod payment = PaymentFactory.getPaymentMethod("CreditCard");
+        payment.processPayment(50.0);
+    }
+}
