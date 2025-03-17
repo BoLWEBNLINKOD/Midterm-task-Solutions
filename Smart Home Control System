@@ -1,0 +1,48 @@
+interface SmartDevice {
+    void turnOn();
+    void turnOff();
+}
+
+class Light implements SmartDevice {
+    private String name;
+    public Light(String name) { this.name = name; }
+    public void turnOn() { System.out.println(name + " light turned on."); }
+    public void turnOff() { System.out.println(name + " light turned off."); }
+}
+
+class Room implements SmartDevice {
+    private List<SmartDevice> devices = new ArrayList<>();
+    public void addDevice(SmartDevice device) { devices.add(device); }
+    public void turnOn() { devices.forEach(SmartDevice::turnOn); }
+    public void turnOff() { devices.forEach(SmartDevice::turnOff); }
+}
+
+abstract class SmartDeviceDecorator implements SmartDevice {
+    protected SmartDevice decoratedDevice;
+    public SmartDeviceDecorator(SmartDevice device) { this.decoratedDevice = device; }
+    public void turnOn() { decoratedDevice.turnOn(); }
+    public void turnOff() { decoratedDevice.turnOff(); }
+}
+
+class ScheduledDevice extends SmartDeviceDecorator {
+    public ScheduledDevice(SmartDevice device) { super(device); }
+    public void turnOn() { System.out.println("Scheduled: "); super.turnOn(); }
+    public void turnOff() { System.out.println("Scheduled: "); super.turnOff(); }
+}
+
+class SmartHomeController {
+    private List<SmartDevice> devices = new ArrayList<>();
+    public void addDevice(SmartDevice device) { devices.add(device); }
+    public void turnAllOn() { devices.forEach(SmartDevice::turnOn); }
+    public void turnAllOff() { devices.forEach(SmartDevice::turnOff); }
+}
+
+public class SmartHomeMain {
+    public static void main(String[] args) {
+        SmartHomeController controller = new SmartHomeController();
+        SmartDevice light = new Light("Living Room");
+        controller.addDevice(new ScheduledDevice(light));
+        controller.turnAllOn();
+        controller.turnAllOff();
+    }
+}
