@@ -1,48 +1,112 @@
-interface SmartDevice {
-    void turnOn();
-    void turnOff();
-}
+import java.util.*;
 
-class Light implements SmartDevice {
-    private String name;
-    public Light(String name) { this.name = name; }
-    public void turnOn() { System.out.println(name + " light turned on."); }
-    public void turnOff() { System.out.println(name + " light turned off."); }
-}
+public class Main {
+    interface SmartDevice {
+        void activate();
+        void deactivate();
+    }
 
-class Room implements SmartDevice {
-    private List<SmartDevice> devices = new ArrayList<>();
-    public void addDevice(SmartDevice device) { devices.add(device); }
-    public void turnOn() { devices.forEach(SmartDevice::turnOn); }
-    public void turnOff() { devices.forEach(SmartDevice::turnOff); }
-}
+    class SmartLight implements SmartDevice {
+        private String location;
+        public SmartLight(String location) { this.location = location; }
+        public void activate() { System.out.println(location + " Smart Light is now ON."); }
+        public void deactivate() { System.out.println(location + " Smart Light is now OFF."); }
+    }
 
-abstract class SmartDeviceDecorator implements SmartDevice {
-    protected SmartDevice decoratedDevice;
-    public SmartDeviceDecorator(SmartDevice device) { this.decoratedDevice = device; }
-    public void turnOn() { decoratedDevice.turnOn(); }
-    public void turnOff() { decoratedDevice.turnOff(); }
-}
+    class SmartThermostat implements SmartDevice {
+        private int temperature;
+        public void setTemperature(int temp) { this.temperature = temp; }
+        public void activate() { System.out.println("Thermostat adjusted to " + temperature + "°C."); }
+        public void deactivate() { System.out.println("Thermostat switched off."); }
+    }
 
-class ScheduledDevice extends SmartDeviceDecorator {
-    public ScheduledDevice(SmartDevice device) { super(device); }
-    public void turnOn() { System.out.println("Scheduled: "); super.turnOn(); }
-    public void turnOff() { System.out.println("Scheduled: "); super.turnOff(); }
-}
+    class SmartRoom implements SmartDevice {
+        private String roomName;
+        private List<SmartDevice> devices = new ArrayList<>();
+        public SmartRoom(String roomName) { this.roomName = roomName; }
+        public void addDevice(SmartDevice device) { devices.add(device); }
+        public void activate() { 
+            System.out.println("Activating devices in " + roomName);
+            devices.forEach(SmartDevice::activate);
+        }
+        public void deactivate() { 
+            System.out.println("Deactivating devices in " + roomName);
+            devices.forEach(SmartDevice::deactivate);
+        }
+    }
 
-class SmartHomeController {
-    private List<SmartDevice> devices = new ArrayList<>();
-    public void addDevice(SmartDevice device) { devices.add(device); }
-    public void turnAllOn() { devices.forEach(SmartDevice::turnOn); }
-    public void turnAllOff() { devices.forEach(SmartDevice::turnOff); }
-}
+    abstract class SmartFeatureDecorator implements SmartDevice {
+        protected SmartDevice baseDevice;
+        public SmartFeatureDecorator(SmartDevice device) { this.baseDevice = device; }
+        public void activate() { baseDevice.activate(); }
+        public void deactivate() { baseDevice.deactivate(); }
+    }
 
-public class SmartHomeMain {
+    class EnergySavingMode extends SmartFeatureDecorator {
+        public EnergySavingMode(SmartDevice device) { super(device); }
+        public void activate() { System.out.println("Energy Saving Mode Enabled."); super.activate(); }
+        public void deactivate() { System.out.println("Energy Saving Mode Disabled."); super.deactivate(); }
+    }
+
+    class VoiceControl extends SmartFeatureDecorator {
+        public VoiceControl(SmartDevice device) { super(device); }
+        public void activate() { System.out.println("Voice Activation: Command received."); super.activate(); }
+        public void deactivate() { System.out.println("Voice Activation: Command received."); super.deactivate(); }
+    }
+
+    interface SmartHomeFactory {
+        SmartDevice createLight(String location);
+        SmartDevice createThermostat();
+    }
+
+    class BasicHomeFactory implements SmartHomeFactory {
+        public SmartDevice createLight(String location) { return new SmartLight(location); }
+        public SmartDevice createThermostat() { return new SmartThermostat(); }
+    }
+
+    class AdvancedHomeFactory implements SmartHomeFactory {
+        public SmartDevice createLight(String location) { return new VoiceControl(new SmartLight(location)); }
+        public SmartDevice createThermostat() { return new EnergySavingMode(new SmartThermostat()); }
+    }
+
+    class OldSecuritySystem {
+        public void enable() { System.out.println("Legacy Security System: Armed"); }
+        public void disable() { System.out.println("Legacy Security System: Disarmed"); }
+    }
+
+    class SecurityAdapter implements SmartDevice {
+        private OldSecuritySystem legacySystem;
+        public SecurityAdapter(OldSecuritySystem legacySystem) { this.legacySystem = legacySystem; }
+        public void activate() { legacySystem.enable(); }
+        public void deactivate() { legacySystem.disable(); }
+    }
+
+    class HomeAutomationController {
+        private List<SmartDevice> devices = new ArrayList<>();
+        public void addDevice(SmartDevice device) { devices.add(device); }
+        public void activateAll() { devices.forEach(SmartDevice::activate); }
+        public void deactivateAll() { devices.forEach(SmartDevice::deactivate); }
+    }
+
     public static void main(String[] args) {
-        SmartHomeController controller = new SmartHomeController();
-        SmartDevice light = new Light("Living Room");
-        controller.addDevice(new ScheduledDevice(light));
-        controller.turnAllOn();
-        controller.turnAllOff();
+        HomeAutomationController controller = new HomeAutomationController();
+        SmartHomeFactory factory = new AdvancedHomeFactory();
+
+        SmartDevice kitchenLight = factory.createLight("Kitchen");
+        SmartDevice thermostat = factory.createThermostat();
+        OldSecuritySystem oldSecurity = new OldSecuritySystem();
+        SmartDevice securitySystem = new SecurityAdapter(oldSecurity);
+
+        SmartRoom kitchen = new SmartRoom("Kitchen");
+        kitchen.addDevice(kitchenLight);
+        kitchen.addDevice(thermostat);
+        controller.addDevice(kitchen);
+        controller.addDevice(securitySystem);
+
+        System.out.println("--- Activating Smart Home ---");
+        controller.activateAll();
+
+        System.out.println("--- Deactivating Smart Home ---");
+        controller.deactivateAll();
     }
 }
